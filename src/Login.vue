@@ -1,6 +1,10 @@
 <script setup>
 import { ref } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { GlobalState } from './utils/storage.js'
+import { switchLocale } from './utils/i18n.js'
+
+const { t, locale } = useI18n()
 
 const loading = ref(false)
 const loginForm = ref({
@@ -20,7 +24,7 @@ const handleLogin = async () => {
     const userData = {
       id: 1,
       username: loginForm.value.username,
-      nickname: '用户' + loginForm.value.username,
+      nickname: t('message.userPrefix') + loginForm.value.username,
       avatar: 'https://avatars.githubusercontent.com/u/1?v=4',
       loginTime: new Date().toISOString(),
     }
@@ -32,12 +36,12 @@ const handleLogin = async () => {
     GlobalState.setToken(token)
     GlobalState.setSessionData('lastLogin', userData.loginTime)
 
-    alert('登录成功！用户信息已保存到全局状态')
+    alert(t('message.loginSuccess'))
 
     // 清空表单
     loginForm.value = { username: '', password: '' }
   } catch (error) {
-    alert('登录失败：' + error.message)
+    alert(t('message.loginFailed', { error: error.message }))
   } finally {
     loading.value = false
   }
@@ -48,18 +52,32 @@ const goToUserCenter = () => {
   // 在 MPA 中使用 window.location 跳转
   window.location.href = '/user-center.html'
 }
+
+// 切换语言
+const currentLocale = ref(locale.value)
+const toggleLanguage = () => {
+  const newLocale = currentLocale.value === 'zh-CN' ? 'en-US' : 'zh-CN'
+  locale.value = newLocale
+  currentLocale.value = newLocale
+  localStorage.setItem('app-locale', newLocale)
+}
 </script>
 
 <template>
   <div class="login-container">
     <div class="login-form">
-      <h2>用户登录</h2>
+      <div class="header">
+        <h2>{{ $t('title') }}</h2>
+        <button @click="toggleLanguage" class="language-btn">
+          {{ currentLocale === 'zh-CN' ? 'EN' : '中文' }}
+        </button>
+      </div>
       <form @submit.prevent="handleLogin">
         <div class="form-group">
           <input
             v-model="loginForm.username"
             type="text"
-            placeholder="用户名"
+            :placeholder="$t('form.username')"
             required
           />
         </div>
@@ -67,16 +85,18 @@ const goToUserCenter = () => {
           <input
             v-model="loginForm.password"
             type="password"
-            placeholder="密码"
+            :placeholder="$t('form.password')"
             required
           />
         </div>
         <button type="submit" class="login-btn" :disabled="loading">
-          {{ loading ? '登录中...' : '登录' }}
+          {{ loading ? $t('form.loginButtonLoading') : $t('form.loginButton') }}
         </button>
       </form>
       <div class="page-link">
-        <button @click="goToUserCenter" class="link-btn">前往用户中心</button>
+        <button @click="goToUserCenter" class="link-btn">
+          {{ $t('navigation.goToUserCenter') }}
+        </button>
       </div>
     </div>
   </div>
@@ -100,10 +120,30 @@ const goToUserCenter = () => {
   max-width: 400px;
 }
 
-.login-form h2 {
-  text-align: center;
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 30px;
+}
+
+.header h2 {
+  margin: 0;
   color: #333;
+}
+
+.language-btn {
+  padding: 5px 10px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.language-btn:hover {
+  background: #5a6fd8;
 }
 
 .form-group {

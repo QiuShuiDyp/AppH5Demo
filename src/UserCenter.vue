@@ -1,8 +1,15 @@
 <template>
   <div class="user-center">
     <div class="header">
-      <h1>用户中心</h1>
-      <button @click="logout" class="logout-btn">退出登录</button>
+      <h1>{{ $t('title') }}</h1>
+      <div class="header-actions">
+        <button @click="toggleLanguage" class="language-btn">
+          {{ currentLocale === 'zh-CN' ? 'EN' : '中文' }}
+        </button>
+        <button @click="logout" class="logout-btn">
+          {{ $t('header.logout') }}
+        </button>
+      </div>
     </div>
 
     <div v-if="user" class="user-info">
@@ -11,38 +18,52 @@
       </div>
       <div class="info">
         <h3>{{ user.nickname }}</h3>
-        <p>用户名：{{ user.username }}</p>
-        <p>用户ID：{{ user.id }}</p>
-        <p>登录时间：{{ formatTime(user.loginTime) }}</p>
-        <p v-if="lastLogin">上次登录：{{ formatTime(lastLogin) }}</p>
+        <p>{{ $t('userInfo.username') }}：{{ user.username }}</p>
+        <p>{{ $t('userInfo.userId') }}：{{ user.id }}</p>
+        <p>{{ $t('userInfo.loginTime') }}：{{ formatTime(user.loginTime) }}</p>
+        <p v-if="lastLogin">
+          {{ $t('userInfo.lastLogin') }}：{{ formatTime(lastLogin) }}
+        </p>
       </div>
     </div>
 
     <div v-else class="no-user">
-      <p>未登录，请先登录</p>
-      <button @click="goToLogin" class="login-link">去登录</button>
+      <p>{{ $t('userInfo.notLoggedIn') }}</p>
+      <button @click="goToLogin" class="login-link">
+        {{ $t('userInfo.goLogin') }}
+      </button>
     </div>
 
     <div class="actions">
-      <button @click="updateUserInfo" class="action-btn">更新用户信息</button>
-      <button @click="checkToken" class="action-btn">检查Token状态</button>
+      <button @click="updateUserInfo" class="action-btn">
+        {{ $t('actions.updateUserInfo') }}
+      </button>
+      <button @click="checkToken" class="action-btn">
+        {{ $t('actions.checkToken') }}
+      </button>
       <button @click="clearAllData" class="action-btn danger">
-        清空所有数据
+        {{ $t('actions.clearAllData') }}
       </button>
     </div>
 
     <div class="page-link">
-      <button @click="goToLogin" class="link-btn">返回登录页</button>
+      <button @click="goToLogin" class="link-btn">
+        {{ $t('navigation.backToLogin') }}
+      </button>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useI18n } from 'vue-i18n'
 import { GlobalState, useStorageWatcher } from './utils/storage.js'
+
+const { t, locale } = useI18n()
 
 const user = ref(null)
 const lastLogin = ref(null)
+const currentLocale = ref(locale.value)
 
 // 监听存储变化的清理函数
 let unwatchStorage = null
@@ -81,37 +102,37 @@ const updateUserInfo = () => {
 
   const updatedUser = {
     ...user.value,
-    nickname: user.value.nickname + '(已更新)',
+    nickname: user.value.nickname + t('message.updatedSuffix'),
     updateTime: new Date().toISOString(),
   }
 
   GlobalState.setUser(updatedUser)
   loadUserData()
-  alert('用户信息已更新！')
+  alert(t('message.userInfoUpdated'))
 }
 
 // 检查Token状态
 const checkToken = () => {
   const token = GlobalState.getToken()
-  alert(token ? `Token: ${token}` : '未找到Token')
+  alert(token ? t('message.tokenStatus', { token }) : t('message.noToken'))
 }
 
 // 清空所有数据
 const clearAllData = () => {
-  if (confirm('确定要清空所有数据吗？')) {
+  if (confirm(t('message.confirmClearData'))) {
     GlobalState.clearAll()
     loadUserData()
-    alert('所有数据已清空！')
+    alert(t('message.dataCleared'))
   }
 }
 
 // 退出登录
 const logout = () => {
-  if (confirm('确定要退出登录吗？')) {
+  if (confirm(t('message.confirmLogout'))) {
     GlobalState.clearUser()
     GlobalState.clearToken()
     loadUserData()
-    alert('已退出登录！')
+    alert(t('message.loggedOut'))
   }
 }
 
@@ -123,7 +144,17 @@ const goToLogin = () => {
 // 格式化时间
 const formatTime = (timeStr) => {
   if (!timeStr) return ''
-  return new Date(timeStr).toLocaleString('zh-CN')
+  return new Date(timeStr).toLocaleString(
+    currentLocale.value === 'zh-CN' ? 'zh-CN' : 'en-US'
+  )
+}
+
+// 切换语言
+const toggleLanguage = () => {
+  const newLocale = currentLocale.value === 'zh-CN' ? 'en-US' : 'zh-CN'
+  locale.value = newLocale
+  currentLocale.value = newLocale
+  localStorage.setItem('app-locale', newLocale)
 }
 </script>
 
@@ -150,6 +181,25 @@ const formatTime = (timeStr) => {
 .header h1 {
   margin: 0;
   color: #333;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.language-btn {
+  padding: 8px 12px;
+  background: #667eea;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.language-btn:hover {
+  background: #5a6fd8;
 }
 
 .logout-btn {
