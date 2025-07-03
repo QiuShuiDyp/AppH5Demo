@@ -6,6 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:login": "BUILD_PAGES=login vite build",
+    "build:user-center": "BUILD_PAGES=userCenter vite build",
+    "build:login-only": "BUILD_PAGES=login vite build",
+    "build:user-center-only": "BUILD_PAGES=userCenter vite build",
+    "build:all": "vite build",
+    "build:smart": "node scripts/build.js",
     "preview": "vite preview"
   },
   "dependencies": {
